@@ -1,17 +1,27 @@
-# Web Endosos Sencillos
+# 🏥 Web Evolution - Operaciones
 
-Interfaz web para traducir endosos de seguros a formato estándar utilizando configuración dinámica desde base de datos.
+Plataforma web unificada para los servicios de operaciones del SQUAD Evolution.
 
 ## 📋 Descripción
 
-Esta aplicación web permite a los usuarios:
+Esta aplicación integra múltiples módulos para optimizar las operaciones de seguros:
+
+### 🔹 Módulo de Endosos Sencillos
 - Seleccionar productos de seguros (Rumbo, VidaProtegida, etc.)
-- Elegir tipos de endoso específicos por producto (CambioFrecuencia, CambioBeneficiario, etc.)
+- Elegir tipos de endoso específicos por producto
 - Completar formularios dinámicos con validación
 - Enviar datos al API de traducción de endosos
-- Visualizar la respuesta JSON transformada
+- Visualizar respuesta JSON transformada
+- Catálogos dinámicos desde base de datos
 
-Los catálogos de productos y tipos de endoso se cargan dinámicamente desde la base de datos a través del API backend.
+### 🔹 Módulo de Rutas Óptimas (NUEVO)
+- Calculadora de rutas para asignación de grúas
+- Algoritmo de Dijkstra para encontrar camino más corto
+- Soporte para múltiples depósitos
+- Escenarios predefinidos (Lima Básico/Complejo)
+- Editor de grafos en formato JSON
+- Visualización interactiva de rutas calculadas
+- Integración con API Go/Lambda
 
 ## 🚀 Desarrollo Local
 
@@ -31,11 +41,19 @@ npm install
 Crea un archivo `.env` en la raíz del proyecto:
 
 ```env
-VITE_API_URL=https://hoae73tgrg.execute-api.us-east-1.amazonaws.com/DESA
-VITE_API_KEY=tu-api-key-aqui
+# Endosos Sencillos API
+VITE_ENDOSOS_API_URL=https://tu-endpoint.execute-api.us-east-1.amazonaws.com/DESA
+VITE_ENDOSOS_API_KEY=tu-api-key-endosos-aqui
+
+# Rutas Óptimas API
+VITE_RUTAS_API_URL=https://tu-endpoint.execute-api.us-east-1.amazonaws.com/DESA
+VITE_RUTAS_API_KEY=tu-api-key-rutas-aqui
 ```
 
-**Importante:** El archivo `.env` está en `.gitignore` y NO debe subirse al repositorio. Usa `.env.example` como referencia.
+**Importante:** 
+- El archivo `.env` está en `.gitignore` y NO debe subirse al repositorio
+- Solicita las API Keys reales al equipo de DevOps o revisa AWS API Gateway
+- NUNCA expongas las API Keys en el código o documentación pública
 
 ### Ejecutar en Desarrollo
 
@@ -45,6 +63,11 @@ npm run dev
 
 La aplicación estará disponible en `http://localhost:5173`
 
+**Rutas disponibles:**
+- `/` - Redirige a `/endosos`
+- `/endosos` - Módulo de Traducción de Endosos
+- `/rutas-optimas` - Módulo de Calculadora de Rutas Óptimas
+
 ### Build para Producción
 
 ```bash
@@ -52,9 +75,13 @@ npm run build
 npm run preview  # Para previsualizar el build
 ```
 
-## 🔗 API Backend
+## 🔗 APIs Backend
 
-El frontend consume los siguientes endpoints del backend:
+El frontend consume endpoints de dos APIs independientes:
+
+### API Endosos Sencillos
+**Base URL:** `https://<tu-endpoint>.execute-api.us-east-1.amazonaws.com/DESA`  
+**Header requerido:** `x-api-key: <tu-api-key>`
 
 ### GET /products
 Obtiene la lista de productos activos.
@@ -103,6 +130,41 @@ Traduce un endoso al formato estándar.
 }
 ```
 
+---
+
+### API Rutas Óptimas
+**Base URL:** `https://<tu-endpoint>.execute-api.us-east-1.amazonaws.com/DESA`  
+**Header requerido:** `x-api-key: <tu-api-key>`
+
+### POST /calculate-route
+Calcula la ruta óptima desde depósitos hasta ubicación del accidente usando Dijkstra.
+
+**Request:**
+```json
+{
+  "accidentLocation": "San Isidro",
+  "depots": ["Miraflores", "Ate"],
+  "graph": {
+    "Miraflores": { "San Isidro": 7, "Barranco": 3 },
+    "San Isidro": { "Miraflores": 7, "Lince": 4 },
+    "Barranco": { "Miraflores": 3, "Surco": 5 },
+    "Lince": { "San Isidro": 4, "Surco": 6 },
+    "Surco": { "Barranco": 5, "Lince": 6, "Ate": 10 },
+    "Ate": { "Surco": 10 }
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "fromDepot": "Miraflores",
+  "to": "San Isidro",
+  "path": ["Miraflores", "San Isidro"],
+  "distance": 7
+}
+```
+
 ## 🌐 Despliegue en AWS Amplify
 
 ### Opción 1: Desde AWS Console (Recomendado)
@@ -113,8 +175,10 @@ Traduce un endoso al formato estándar.
 4. Selecciona el repositorio `web-endosos-sencillos` y la rama `main`
 5. AWS Amplify detectará automáticamente el `amplify.yml`
 6. **Configura las variables de entorno en Build settings:**
-   - `VITE_API_URL`: URL del API Gateway
-   - `VITE_API_KEY`: API Key del backend
+   - `VITE_ENDOSOS_API_URL`: URL del API de Endosos
+   - `VITE_ENDOSOS_API_KEY`: API Key de Endosos
+   - `VITE_RUTAS_API_URL`: URL del API de Rutas Óptimas
+   - `VITE_RUTAS_API_KEY`: API Key de Rutas Óptimas
 7. Click en "Save and deploy"
 
 ### Opción 2: Con Amplify CLI
@@ -136,7 +200,7 @@ amplify add hosting
 amplify publish
 ```
 
-**Importante:** En ambos casos, asegúrate de configurar las variables de entorno `VITE_API_URL` y `VITE_API_KEY` en la consola de Amplify.
+**Importante:** En ambos casos, asegúrate de configurar las 4 variables de entorno (`VITE_ENDOSOS_API_URL`, `VITE_ENDOSOS_API_KEY`, `VITE_RUTAS_API_URL`, `VITE_RUTAS_API_KEY`) en la consola de Amplify.
 
 ## 🔧 Despliegue del API Backend
 
@@ -192,13 +256,16 @@ Después del despliegue, obtén la API Key desde AWS Console:
 ## 🛠️ Tecnologías
 
 **Frontend:**
-- React 18
+- React 19.1
 - TypeScript
-- Vite 6
+- Vite 7.2
+- React Router DOM 7 (navegación entre módulos)
 - Custom Hooks para consumo de API
-- Django-inspired UI (light theme)
+- Django-inspired UI (light theme - verde esmeralda)
 
-**Backend:**
+**Backend APIs:**
+
+*Endosos Sencillos:*
 - Hapi.js 21
 - Node.js 20.x
 - TypeScript
@@ -206,24 +273,44 @@ Después del despliegue, obtén la API Key desde AWS Console:
 - MySQL (RDS)
 - Serverless Framework
 
+*Rutas Óptimas:*
+- Go 1.21+
+- Algoritmo de Dijkstra
+- Clean Architecture (SOLID)
+- AWS Lambda (ARM64)
+- API Gateway con API Keys
+- Serverless Framework
+
 ## 📦 Estructura del Proyecto
 
 ```
 web-endosos-sencillos/
 ├── src/
+│   ├── pages/                            # ← NUEVO
+│   │   ├── EndorsePage.tsx               # Página de Endosos
+│   │   ├── EndorsePage.css
+│   │   ├── OptimalRoutePage.tsx          # Página de Rutas Óptimas
+│   │   └── OptimalRoutePage.css
 │   ├── components/
-│   │   ├── EndorseForm.tsx       # Formulario dinámico
-│   │   └── ResponseDisplay.tsx   # Visualización JSON
+│   │   ├── Navigation.tsx                # ← NUEVO - Barra navegación
+│   │   ├── Navigation.css
+│   │   ├── RouteCalculatorForm.tsx       # ← NUEVO - Formulario rutas
+│   │   ├── RouteCalculatorForm.css
+│   │   ├── RouteResultDisplay.tsx        # ← NUEVO - Visualización rutas
+│   │   ├── RouteResultDisplay.css
+│   │   ├── EndorseForm.tsx               # Formulario de endosos
+│   │   └── ResponseDisplay.tsx           # Visualización JSON
 │   ├── hooks/
-│   │   └── useApi.ts             # Custom hooks para API
-│   ├── App.tsx                   # Componente principal
-│   ├── App.css                   # Estilos Django theme
-│   ├── index.css                 # Estilos globales
-│   └── main.tsx                  # Entry point
+│   │   └── useApi.ts                     # Custom hooks para API
+│   ├── App.tsx                           # Router principal
+│   ├── App.css                           # Estilos base
+│   ├── index.css                         # Estilos globales Django theme
+│   └── main.tsx                          # Entry point
 ├── public/
-├── amplify.yml                   # Config Amplify CI/CD
-├── .env                          # Variables de entorno (no subir)
-├── .env.example                  # Plantilla de .env
+├── amplify.yml                           # Config Amplify CI/CD
+├── .env                                  # Variables de entorno (no subir)
+├── README.md                             # Este archivo
+├── README-RUTAS-OPTIMAS.md               # Doc específica rutas
 ├── .gitignore
 └── package.json
 ```
@@ -258,11 +345,38 @@ npm run lint       # Linting con ESLint
 4. Push a la rama (`git push origin feature/AmazingFeature`)
 5. Abre un Pull Request
 
-## 📄 Licencia
+## 🎨 Diseño
 
-Este proyecto es privado y de uso interno.
+La aplicación utiliza el esquema de colores de Django Framework (versión light):
+- **Verde oscuro principal:** `#0C4B33`
+- **Verde esmeralda:** `#44B78B`
+- **Tema:** Light con degradados suaves
+- **Componentes:** Modernos, con animaciones y transiciones
 
-## 👤 Autor
+## 📚 Documentación Adicional
 
-Enzo Olórtegui
+- [README-RUTAS-OPTIMAS.md](./README-RUTAS-OPTIMAS.md) - Documentación detallada del módulo de rutas óptimas
+- [README-DEPLOY.md](./README-DEPLOY.md) - Guía de deployment en AWS Amplify
+
+## 🔄 Historial de Cambios
+
+### v2.0.0 (Noviembre 2025)
+- ✨ Agregado módulo de Rutas Óptimas
+- ✨ Implementado React Router para navegación
+- ✨ Nuevo componente Navigation
+- 🎨 Actualizado diseño a Django theme (verde esmeralda)
+- 🔧 Separación de variables de entorno por API
+- � Documentación completa actualizada
+
+### v1.0.0
+- 🎉 Versión inicial con módulo de Endosos Sencillos
+
+## �📄 Licencia
+
+Este proyecto es privado y de uso interno del SQUAD de Operaciones - Evolution.
+
+## � Equipo
+
+**SQUAD de Operaciones - Interseguros**  
+Iniciativa Evolution - Atención de Siniestros
 

@@ -11,8 +11,8 @@ interface EndorseType {
   descripcion?: string;
 }
 
-const API_URL = import.meta.env.VITE_API_URL;
-const API_KEY = import.meta.env.VITE_API_KEY;
+const API_URL = import.meta.env.VITE_ENDOSOS_API_URL;
+const API_KEY = import.meta.env.VITE_ENDOSOS_API_KEY;
 
 export const useProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
